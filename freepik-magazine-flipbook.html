@@ -58,14 +58,13 @@ body{background:#4d4d4d;font-family:'Segoe UI',sans-serif;display:flex;flex-dire
 .jg:hover{background:#555;color:#eee;}
 .vs{width:1px;height:12px;background:#3a3a3a;}
 
-#thumbbar{display:flex;gap:5px;overflow-x:auto;max-width:min(94vw,1000px);padding:4px 6px 2px;scrollbar-width:thin;scrollbar-color:#555 transparent;}
+#thumbbar{display:flex;gap:5px;overflow-x:auto;max-width:min(94vw,1000px);padding:12px 6px 2px;scrollbar-width:thin;scrollbar-color:#555 transparent;}
 #thumbbar::-webkit-scrollbar{height:3px;}
 #thumbbar::-webkit-scrollbar-thumb{background:#555;border-radius:2px;}
 .th{flex-shrink:0;width:40px;height:56px;border-radius:2px;overflow:hidden;cursor:pointer;opacity:.35;outline:2px solid transparent;outline-offset:1px;transition:opacity .2s,outline .2s;background:#3a3a3a;}
 .th.active{opacity:1;outline:2px solid #ccc;}
 .th canvas{width:100%;height:100%;display:block;}
-#hint{font-size:11px;color:#555;padding-bottom:2px;}
-kbd{background:#4a4a4a;border:1px solid #333;border-radius:3px;padding:1px 4px;font-size:10px;color:#d0d0d0;}
+
 </style>
 </head>
 <body>
@@ -104,7 +103,7 @@ kbd{background:#4a4a4a;border:1px solid #333;border-radius:3px;padding:1px 4px;f
     <button class="nb sq" id="blast"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM14 6h2v12h-2z"/></svg></button>
   </div>
   <div id="thumbbar"></div>
-  <div id="hint"><kbd>←</kbd> <kbd>→</kbd> navegar</div>
+  
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -186,27 +185,36 @@ function flip(dir){
   const nxt=cur+dir;
   if(nxt<0||nxt>=ns())return;
   busy=true;
+
+  // Página que vuela: la última del spread actual (fwd) o primera del siguiente (bck)
   const fi=dir>0?sidxs(cur)[sidxs(cur).length-1]:sidxs(nxt)[0];
+  const src=PC[fi+1];
+  if(!src){busy=false;return;}
+
+  // Medir libro ANTES de redibujar
+  const bk=document.getElementById('book');
+  const bw=bk.offsetWidth,bh=bk.offsetHeight;
+  const sx=bw/2;
+  const pw=Math.round(bw/2),ph=bh;
+
+  // Canvas volador
+  const fc=document.createElement('canvas');
+  fc.width=src.width;fc.height=src.height;
+  fc.getContext('2d').drawImage(src,0,0);
+  fc.style.cssText=`display:block;width:${pw}px;height:${ph}px;backface-visibility:hidden;`;
+
+  const fp=document.createElement('div');
+  fp.className='fp '+(dir>0?'fwd':'bck');
+  fp.style.cssText=`width:${pw}px;height:${ph}px;top:0;left:${dir>0?sx:sx-pw}px;backface-visibility:hidden;`;
+  fp.appendChild(fc);
+
+  const fw=document.getElementById('fw');
+  fw.innerHTML='';fw.appendChild(fp);
+
+  // Redibujar el spread destino DESPUÉS de lanzar la animación
   cur=nxt;draw(cur);
-  requestAnimationFrame(()=>{
-    const bk=document.getElementById('book');
-    const bw=bk.offsetWidth,bh=bk.offsetHeight;
-    const sx=bw/2;
-    const src=PC[fi+1];
-    if(!src){busy=false;return;}
-    const pw=Math.round(bw/2),ph=bh;
-    const fc=document.createElement('canvas');
-    fc.width=src.width;fc.height=src.height;
-    fc.getContext('2d').drawImage(src,0,0);
-    fc.style.cssText=`display:block;width:${pw}px;height:${ph}px;`;
-    const fp=document.createElement('div');
-    fp.className='fp '+(dir>0?'fwd':'bck');
-    fp.style.cssText=`width:${pw}px;height:${ph}px;top:0;left:${dir>0?sx:sx-pw}px;transform-style:preserve-3d;`;
-    fp.appendChild(fc);
-    const fw=document.getElementById('fw');
-    fw.innerHTML='';fw.appendChild(fp);
-    fp.addEventListener('animationend',()=>{fw.innerHTML='';busy=false;},{once:true});
-  });
+
+  fp.addEventListener('animationend',()=>{fw.innerHTML='';busy=false;},{once:true});
 }
 
 async function fwd(){if(busy||cur>=ns()-1)return;await es(cur+1);flip(1);}

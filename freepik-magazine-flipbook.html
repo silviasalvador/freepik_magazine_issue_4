@@ -229,7 +229,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 const DEFAULT_PDF =
-  'https://raw.githubusercontent.com/silviasalvador/freepik_magazine_issue_4/main/freepik_magazine_issue_4.pdf';
+  './freepik_magazine_issue_4.pdf';
 
 let pdfDoc = null;
 let pageCanvases = {};
@@ -495,19 +495,14 @@ function fixUrl(url) {
 }
 // Fetch the PDF as ArrayBuffer first (avoids Range-request CORS issues)
 // then pass the raw data to pdf.js
-async function fetchAsBuffer(url) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const buf = await r.arrayBuffer();
-  if (buf.byteLength < 100) throw new Error('Empty response');
-  return buf;
-}
-async function loadFromBuffer(buf) {
+async function tryLoadUrl(url) {
   const t = pdfjsLib.getDocument({
-    data: buf,
+    url,
     cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
-    cMapPacked: true
+    cMapPacked: true,
+    withCredentials: false
   });
+  t.onProgress = p => { if(p.total>0) setBar(10+Math.round(p.loaded/p.total*55), `Descargando… ${Math.round(p.loaded/p.total*100)}%`); };
   return await t.promise;
 }
 async function loadPDF(url) {
@@ -527,15 +522,13 @@ async function loadPDF(url) {
     ];
     let loaded=false;
     for(let i=0;i<strats.length;i++){
-      setBar(10+i*12,`Descargando… (${i+1}/${strats.length})`);
+      setBar(10+i*10,`Cargando… (${i+1}/${strats.length})`);
       try{
-        const buf = await fetchAsBuffer(strats[i]);
-        setBar(60,'Procesando PDF…');
-        pdfDoc = await loadFromBuffer(buf);
+        pdfDoc = await tryLoadUrl(strats[i]);
         loaded=true; break;
       }catch(e){console.warn('strat',i,'failed:',e.message);}
     }
-    if(!loaded) throw new Error('No se pudo cargar el PDF. Prueba con Dropbox (dl=1).');
+    if(!loaded) throw new Error('No se pudo cargar el PDF.');
     totalPgs=pdfDoc.numPages;
     document.getElementById('jump-input').max=totalPgs;
     setBar(65,'Renderizando primeras páginas…');

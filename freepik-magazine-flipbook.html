@@ -194,8 +194,10 @@ function flip(dir){
   // Medir libro ANTES de redibujar
   const bk=document.getElementById('book');
   const bw=bk.offsetWidth,bh=bk.offsetHeight;
-  const sx=bw/2;
-  const pw=Math.round(bw/2),ph=bh;
+  // En spreads de 1 página (portada/contraportada) el pivote es el borde opuesto al giro
+  const isSingle=sidxs(cur).length===1||sidxs(nxt).length===1;
+  const pw=isSingle?bw:Math.round(bw/2),ph=bh;
+  const sx=dir>0?(isSingle?bw:bw/2):(isSingle?0:bw/2);
 
   // Canvas volador
   const fc=document.createElement('canvas');

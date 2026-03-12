@@ -180,7 +180,13 @@ function draw(s){
   const w=document.createElement('div');
   w.style.cssText='display:flex;align-items:stretch;border-radius:2px;box-shadow:0 22px 64px rgba(0,0,0,.7),0 6px 18px rgba(0,0,0,.4);';
   if(idxs.length===1){
-    w.appendChild(pgel(idxs[0],mh));
+    // Página fantasma invisible para mantener ancho = doble spread
+    const ghost=document.createElement('div');
+    const realEl=pgel(idxs[0],mh);
+    const rw=realEl.style.width||realEl.width;
+    ghost.style.cssText=`width:${parseInt(rw)||Math.round(mh*.707)}px;height:${mh}px;visibility:hidden;flex-shrink:0;`;
+    if(s===0){w.appendChild(ghost);w.appendChild(pgel(idxs[0],mh));}  // portada: fantasma izq, página derecha
+    else{w.appendChild(pgel(idxs[0],mh));w.appendChild(ghost);}       // contraportada: página izq, fantasma derecha
   } else {
     const L=pgel(idxs[0],mh);L.style.borderRight='1px solid #111';
     const sp=document.createElement('div');sp.className='spine';

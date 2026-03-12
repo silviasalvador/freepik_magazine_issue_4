@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Freepik Magazine</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#4d4d4d;--border:#2a2a2a;
+  --text:#e8e8e6;--text-muted:#888884;
+  --accent:#2383e2;--accent-hover:#1a6fc4;
+  --danger:#eb5757;--r:6px;
+}
+body{
+  font-family:'Inter',-apple-system,sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  overflow-x:hidden;
+}
+
+/* HEADER */
+#header{
+  width:100%;background:#333;padding:0 20px;height:50px;
+  display:flex;align-items:center;gap:12px;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+}
+.brand-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;flex-shrink:0;}
+.search-row{flex:1;display:flex;align-items:center;gap:7px;max-width:480px;}
+.url-wrap{flex:1;position:relative;}
+.url-ico{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text-muted);}
+.url-input{width:100%;height:32px;background:#4a4a4a;border:1px solid #444;border-radius:var(--r);padding:0 10px 0 26px;font:12px 'Inter',sans-serif;color:var(--text);outline:none;}
+.url-input:focus{border-color:var(--accent);}
+.btn-open{height:32px;padding:0 14px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font:500 12px 'Inter',sans-serif;cursor:pointer;}
+.btn-open:hover{background:var(--accent-hover);}
+#page-indicator{color:#aaa;font-size:12px;flex-shrink:0;min-width:130px;text-align:right;margin-left:auto;}
+
+/* LOADING */
+#loading{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center;}
+#loading.hidden{display:none;}
+.load-card{background:#555;border:1px solid #444;border-radius:10px;padding:28px 32px;display:flex;flex-direction:column;align-items:center;gap:14px;min-width:260px;}
+.load-track{width:100%;height:3px;background:#333;border-radius:99px;overflow:hidden;}
+.load-fill{height:100%;width:0%;background:var(--accent);border-radius:99px;transition:width .3s;}
+.load-sub{font-size:12px;color:var(--text-muted);align-self:flex-start;}
+
+/* EMPTY */
+#empty{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+#empty.hidden{display:none;}
+.empty-card{background:#555;border:1px solid #444;border-radius:10px;padding:28px;max-width:400px;width:100%;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.empty-title{font-size:15px;font-weight:600;}
+.empty-desc{font-size:13px;color:var(--text-muted);line-height:1.6;}
+.divider{width:100%;height:1px;background:#444;margin:4px 0;}
+.tip{font-size:12px;color:var(--text-muted);line-height:1.5;text-align:left;width:100%;}
+.error-box{display:none;width:100%;background:#fff5f5;border:1px solid rgba(235,87,87,.3);border-radius:6px;padding:9px 12px;font-size:12px;color:var(--danger);line-height:1.5;text-align:left;}
+.error-box.show{display:block;}
+
+/* VIEWER AREA */
+#viewer-area{flex:1;display:none;flex-direction:column;align-items:center;width:100%;padding:20px 0 0;}
+#viewer-area.show{display:flex;}
+
+/* Viewer row */
+#viewer{display:flex;align-items:center;justify-content:center;width:100%;padding:0 10px;}
+.arr-btn{background:rgba(0,0,0,.22);border:none;color:#fff;font-size:30px;width:50px;height:50px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;flex-shrink:0;margin:0 14px;user-select:none;}
+.arr-btn:hover{background:rgba(0,0,0,.44);}
+.arr-btn:disabled{opacity:.15;cursor:default;}
+
+/* Book: position:relative so we can absolutely position the flip overlay */
+#book-container{
+  position:relative;
+  display:inline-flex; /* shrinks to content size */
+  align-items:center;
+  justify-content:center;
+}
+
+/* The static spread lives here — its rendered size determines book-container size */
+#spread-current{
+  display:flex;align-items:stretch;
+  border-radius:2px;
+  box-shadow:0 22px 64px rgba(0,0,0,.7),0 6px 18px rgba(0,0,0,.4);
+}
+
+/* Flip overlay covers exactly the book-container */
+#flip-wrapper{
+  position:absolute;
+  top:0;left:0;right:0;bottom:0;
+  pointer-events:none;
+  overflow:visible; /* must be visible so page can sweep across full book */
+  z-index:10;
+  perspective:1800px; /* 3D context lives here */
+  perspective-origin:center center;
+}
+
+/* Flying page — positioned via JS with exact pixel coordinates */
+.fly-page{
+  position:absolute;
+  top:0;
+  backface-visibility:hidden;
+  border-radius:2px;
+  transform-style:preserve-3d;
+}
+
+/* Forward: pivot on LEFT edge (page placed at spine, sweeps left→right over book) */
+.fly-fwd{
+  transform-origin:left center;
+  animation:flyFwd 0.9s cubic-bezier(.35,0,.25,1) forwards;
+}
+@keyframes flyFwd{
+  0%  {transform:rotateY(0deg);    filter:brightness(1);   box-shadow:-4px 0 12px rgba(0,0,0,.3);}
+  25% {transform:rotateY(-45deg);  filter:brightness(.82); box-shadow:-20px 0 35px rgba(0,0,0,.55);}
+  50% {transform:rotateY(-90deg);  filter:brightness(.55); box-shadow:-28px 0 40px rgba(0,0,0,.65);}
+  75% {transform:rotateY(-135deg); filter:brightness(.38); box-shadow:-14px 0 20px rgba(0,0,0,.4);}
+  100%{transform:rotateY(-180deg); filter:brightness(.25); box-shadow:none;}
+}
+
+/* Backward: pivot on RIGHT edge (page placed at spine, sweeps right→left over book) */
+.fly-bck{
+  transform-origin:right center;
+  animation:flyBck 0.9s cubic-bezier(.35,0,.25,1) forwards;
+}
+@keyframes flyBck{
+  0%  {transform:rotateY(0deg);   filter:brightness(1);   box-shadow:4px 0 12px rgba(0,0,0,.3);}
+  25% {transform:rotateY(45deg);  filter:brightness(.82); box-shadow:20px 0 35px rgba(0,0,0,.55);}
+  50% {transform:rotateY(90deg);  filter:brightness(.55); box-shadow:28px 0 40px rgba(0,0,0,.65);}
+  75% {transform:rotateY(135deg); filter:brightness(.38); box-shadow:14px 0 20px rgba(0,0,0,.4);}
+  100%{transform:rotateY(180deg); filter:brightness(.25); box-shadow:none;}
+}
+
+/* CONTROLS */
+#controls{width:100%;display:none;flex-direction:column;align-items:center;gap:6px;padding:10px 0 14px;}
+#controls.show{display:flex;}
+#nav-row{display:flex;align-items:center;gap:6px;}
+.nav-btn{height:28px;padding:0 10px;background:#555;border:1px solid #444;border-radius:var(--r);cursor:pointer;font:500 11.5px 'Inter',sans-serif;color:#aaa;display:flex;align-items:center;gap:4px;transition:all .15s;}
+.nav-btn:hover{background:#666;color:var(--text);}
+.nav-btn:disabled{opacity:.22;cursor:default;pointer-events:none;}
+.nav-btn svg{width:11px;height:11px;fill:currentColor;}
+.nav-btn.sq{width:28px;padding:0;justify-content:center;}
+.page-pill{height:28px;background:#3a3a3a;border:1px solid #444;border-radius:var(--r);padding:0 10px;display:flex;align-items:center;gap:6px;font-size:11.5px;color:#aaa;}
+.vsep{width:1px;height:12px;background:#444;}
+.jump-in{width:40px;height:20px;border:1px solid #444;border-radius:4px;background:#4a4a4a;text-align:center;outline:none;font:11px 'Inter',sans-serif;color:var(--text);}
+.jump-go{height:20px;padding:0 6px;background:#4a4a4a;border:1px solid #444;border-radius:4px;font:11px 'Inter',sans-serif;cursor:pointer;color:#aaa;}
+.jump-go:hover{background:#555;color:var(--text);}
+.zoom-grp{display:flex;}
+.zoom-btn{width:26px;height:26px;background:#555;border:1px solid #444;cursor:pointer;font-size:14px;color:#aaa;display:flex;align-items:center;justify-content:center;}
+.zoom-btn:first-child{border-radius:var(--r) 0 0 var(--r);}
+.zoom-btn:last-child{border-radius:0 var(--r) var(--r) 0;border-left:none;}
+.zoom-btn:hover{background:#666;color:var(--text);}
+
+/* Thumbnail strip */
+#thumbnail-bar{display:flex;gap:5px;overflow-x:auto;max-width:min(94vw,1000px);padding:4px 6px 2px;scrollbar-width:thin;scrollbar-color:#555 transparent;}
+#thumbnail-bar::-webkit-scrollbar{height:3px;}
+#thumbnail-bar::-webkit-scrollbar-thumb{background:#555;border-radius:2px;}
+.thumb-wrap{flex-shrink:0;width:40px;height:56px;border-radius:2px;overflow:hidden;cursor:pointer;opacity:.38;outline:2px solid transparent;outline-offset:1px;transition:opacity .2s,outline .2s;background:#3a3a3a;}
+.thumb-wrap.active{opacity:1;outline:2px solid #ddd;}
+.thumb-wrap canvas{width:100%;height:100%;display:block;}
+#kbd-hint{font-size:11px;color:#555;padding-bottom:2px;}
+kbd{background:#4a4a4a;border:1px solid #3a3a3a;border-radius:3px;padding:1px 4px;font-size:10px;color:#888;}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <span style="font-size:16px;flex-shrink:0">📄</span>
+  <span class="brand-name" id="doc-title">Freepik Magazine</span>
+  <div class="search-row">
+    <div class="url-wrap">
+      <span class="url-ico">🔗</span>
+      <input class="url-input" id="url-input" type="text" placeholder="URL del PDF…"/>
+    </div>
+    <button class="btn-open" id="btn-load">Abrir</button>
+  </div>
+  <span id="page-indicator"></span>
+</div>
+
+<div id="loading" class="hidden">
+  <div class="load-card">
+    <div style="font-size:28px">📄</div>
+    <div style="font-size:14px;font-weight:600">Cargando documento…</div>
+    <div class="load-track"><div class="load-fill" id="load-bar"></div></div>
+    <div class="load-sub" id="load-txt">Iniciando…</div>
+  </div>
+</div>
+
+<div id="empty">
+  <div class="empty-card">
+    <div style="font-size:32px">📖</div>
+    <div class="empty-title">Abre un PDF para empezar</div>
+    <div class="empty-desc">Pega la URL directa a tu PDF y pulsa <b>Abrir</b>.</div>
+    <div class="divider"></div>
+    <div class="tip">✅ <b>GitHub Raw:</b> Repo → archivo → Raw → copia URL</div>
+    <div class="tip">✅ <b>Dropbox:</b> cambia <code>dl=0</code> → <code>dl=1</code></div>
+    <div class="error-box" id="error-msg"></div>
+  </div>
+</div>
+
+<div id="viewer-area">
+  <div id="viewer">
+    <button class="arr-btn" id="btn-prev">&#8249;</button>
+    <div id="book-container">
+      <div id="spread-current"></div>
+      <div id="flip-wrapper"></div>
+    </div>
+    <button class="arr-btn" id="btn-next">&#8250;</button>
+  </div>
+  <div id="controls">
+    <div id="nav-row">
+      <button class="nav-btn sq" id="btn-first"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+      <div class="page-pill">
+        <input class="jump-in" type="number" id="jump-input" min="1" placeholder="pág">
+        <div class="vsep"></div>
+        <button class="jump-go" id="btn-jump">Ir</button>
+      </div>
+      <button class="nav-btn sq" id="btn-last"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM14 6h2v12h-2z"/></svg></button>
+      <div class="vsep" style="margin:0 2px;"></div>
+      <div class="zoom-grp">
+        <button class="zoom-btn" id="zoom-out">−</button>
+        <button class="zoom-btn" id="zoom-in">+</button>
+      </div>
+    </div>
+    <div id="thumbnail-bar"></div>
+    <div id="kbd-hint"><kbd>←</kbd> <kbd>→</kbd> navegar</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const DEFAULT_PDF =
+  'https://raw.githubusercontent.com/silviasalvador/freepik_magazine_issue_4/main/freepik_magazine_issue_4.pdf';
+
+let pdfDoc = null;
+let pageCanvases = {};
+let thumbCanvases = {};
+let totalPgs = 0;
+let currentSpread = 0;
+let isAnimating = false;
+let zoomLevel = 1;
+
+// ── SPREAD MATH ────────────────────────────────────────────────────────
+function numSpreads() {
+  if (totalPgs <= 0) return 0;
+  if (totalPgs === 1) return 1;
+  return 1 + Math.ceil((totalPgs - 2) / 2) + 1;
+}
+// Returns 0-based page indices for spread s
+function spreadIdxs(s) {
+  const ns = numSpreads();
+  if (s === 0)      return [0];
+  if (s === ns - 1) return [totalPgs - 1];
+  const left = 1 + (s - 1) * 2;
+  const right = left + 1;
+  if (right >= totalPgs - 1) return [left];
+  return [left, right];
+}
+function spreadOf(idx) {
+  if (idx === 0)          return 0;
+  if (idx === totalPgs-1) return numSpreads()-1;
+  return 1 + Math.floor((idx - 1) / 2);
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────
+async function renderPage(n) {
+  if (pageCanvases[n]) return;
+  const pg = await pdfDoc.getPage(n);
+  const vp = pg.getViewport({ scale: 1.6 });
+  const c = document.createElement('canvas');
+  c.width = vp.width; c.height = vp.height;
+  await pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+  pageCanvases[n] = c;
+  const tv = pg.getViewport({ scale: 0.09 });
+  const tc = document.createElement('canvas');
+  tc.width = tv.width; tc.height = tv.height;
+  await pg.render({ canvasContext: tc.getContext('2d'), viewport: tv }).promise;
+  thumbCanvases[n] = tc;
+}
+async function ensureSpread(s) {
+  for (const i of spreadIdxs(s)) await renderPage(i + 1);
+}
+async function renderAllBg() {
+  for (let i = 1; i <= totalPgs; i++) {
+    await renderPage(i);
+    if (i % 8 === 0) buildThumbs();
+  }
+  buildThumbs();
+}
+
+// ── PAGE ELEMENT ───────────────────────────────────────────────────────
+function makePageEl(idx, maxH) {
+  const n = idx + 1;
+  const src = pageCanvases[n];
+  if (!src) {
+    const d = document.createElement('div');
+    d.style.cssText = `height:${maxH}px;width:${Math.round(maxH*0.707)}px;background:#3a3a3a;display:block;`;
+    return d;
+  }
+  const h = Math.min(maxH, src.height);
+  const w = Math.round(h * src.width / src.height);
+  const c = document.createElement('canvas');
+  c.width = src.width; c.height = src.height;
+  c.getContext('2d').drawImage(src, 0, 0);
+  c.style.cssText = `display:block;height:${h}px;width:${w}px;`;
+  return c;
+}
+
+// ── RENDER STATIC ──────────────────────────────────────────────────────
+function renderStatic(s) {
+  const maxH = Math.round(window.innerHeight * 0.70);
+  const container = document.getElementById('spread-current');
+  container.innerHTML = '';
+  const idxs = spreadIdxs(s);
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;align-items:stretch;border-radius:2px;box-shadow:0 22px 64px rgba(0,0,0,.7),0 6px 18px rgba(0,0,0,.4);';
+  if (idxs.length === 1) {
+    wrap.appendChild(makePageEl(idxs[0], maxH));
+  } else {
+    const L = makePageEl(idxs[0], maxH);
+    L.style.borderRight = '1px solid #111';
+    wrap.appendChild(L);
+    wrap.appendChild(makePageEl(idxs[1], maxH));
+  }
+  container.appendChild(wrap);
+  updateUI(s);
+}
+
+// ── CSS 3D FLIP ────────────────────────────────────────────────────────
+/*
+  The key insight:
+  - book-container is exactly the size of the rendered spread.
+  - For a DOUBLE spread, the spine is at x = bookWidth/2.
+  - For FORWARD flip: the right page (starting at x=spineX) flies.
+    We position .fly-page at left=spineX, width=pageW, pivot=left center → rotateY(-180deg)
+  - For BACKWARD flip: the left page (ending at x=spineX) flies.
+    We position .fly-page at left=0 (or right=spineX), width=pageW, pivot=right center → rotateY(180deg)
+  - For a SINGLE page spread (cover/back), the whole page flips.
+*/
+function doFlip(dir) {
+  if (isAnimating) return;
+  const next = currentSpread + dir;
+  if (next < 0 || next >= numSpreads()) return;
+
+  isAnimating = true;
+
+  const fromIdxs = spreadIdxs(currentSpread);
+  const toIdxs   = spreadIdxs(next);
+
+  // The page that appears to turn
+  const flyIdx = dir > 0
+    ? fromIdxs[fromIdxs.length - 1]  // rightmost of current
+    : toIdxs[0];                      // leftmost of destination
+
+  // Switch underlying spread first
+  currentSpread = next;
+  renderStatic(currentSpread);
+
+  // Measure book dimensions NOW (after renderStatic updated the DOM)
+  // Use a small delay to let the browser lay out the new spread
+  await new Promise(r => requestAnimationFrame(r));
+
+  const book = document.getElementById('book-container');
+  const bookRect = book.getBoundingClientRect();
+  const bookW = bookRect.width;
+  const bookH = bookRect.height;
+
+  // Get the page canvas
+  const n = flyIdx + 1;
+  const src = pageCanvases[n];
+  if (!src) { isAnimating = false; return; }
+
+  // The flying canvas should be the same display size as a page in the book
+  // A page occupies half the bookW (for double spreads) and full bookH
+  const pageW = Math.round(bookW / 2);
+  const pageH = bookH;
+
+  // Build the flying canvas scaled to exactly pageW x pageH
+  const fc = document.createElement('canvas');
+  fc.width = src.width; fc.height = src.height;
+  fc.getContext('2d').drawImage(src, 0, 0);
+  fc.style.cssText = `display:block;width:${pageW}px;height:${pageH}px;border-radius:2px;`;
+
+  const fp = document.createElement('div');
+  fp.className = `fly-page ${dir > 0 ? 'fly-fwd' : 'fly-bck'}`;
+  fp.style.width  = pageW + 'px';
+  fp.style.height = pageH + 'px';
+  fp.appendChild(fc);
+
+  // Spine = horizontal center of book
+  const spineX = bookW / 2;
+
+  if (dir > 0) {
+    // Forward: page starts on RIGHT half, pivot = LEFT edge = spine
+    fp.style.left = spineX + 'px';
+    fp.style.top  = '0px';
+  } else {
+    // Backward: page starts on LEFT half, pivot = RIGHT edge = spine
+    // left edge = spineX - pageW
+    fp.style.left = (spineX - pageW) + 'px';
+    fp.style.top  = '0px';
+  }
+
+  const fw = document.getElementById('flip-wrapper');
+  fw.innerHTML = '';
+  fw.appendChild(fp);
+
+  fp.addEventListener('animationend', () => {
+    fw.innerHTML = '';
+    isAnimating = false;
+  }, { once: true });
+}
+
+async function flipFwd() {
+  if (isAnimating || currentSpread >= numSpreads()-1) return;
+  await ensureSpread(currentSpread + 1);
+  doFlip(1);
+}
+async function flipBck() {
+  if (isAnimating || currentSpread <= 0) return;
+  await ensureSpread(currentSpread - 1);
+  doFlip(-1);
+}
+async function goTo(s) {
+  if (s === currentSpread || s < 0 || s >= numSpreads()) return;
+  await ensureSpread(s);
+  if (Math.abs(s - currentSpread) === 1) {
+    doFlip(s > currentSpread ? 1 : -1);
+  } else {
+    currentSpread = s;
+    renderStatic(s);
+  }
+}
+
+// ── UI ─────────────────────────────────────────────────────────────────
+function updateUI(s) {
+  const ns = numSpreads();
+  const idxs = spreadIdxs(s);
+  const nums = idxs.map(i => i + 1);
+  const label = s === 0 ? 'Portada'
+    : s === ns-1 ? 'Contraportada'
+    : `Pág. ${nums.join('–')} / ${totalPgs}`;
+  document.getElementById('page-indicator').textContent = label;
+  document.getElementById('btn-prev').disabled  = s <= 0;
+  document.getElementById('btn-next').disabled  = s >= ns-1;
+  document.getElementById('btn-first').disabled = s <= 0;
+  document.getElementById('btn-last').disabled  = s >= ns-1;
+  document.getElementById('jump-input').value   = nums[0];
+  syncThumbs(s);
+}
+
+function buildThumbs() {
+  const bar = document.getElementById('thumbnail-bar');
+  const ns = numSpreads();
+  const existing = bar.querySelectorAll('.thumb-wrap').length;
+  for (let s = existing; s < ns; s++) {
+    const wrap = document.createElement('div');
+    wrap.className = 'thumb-wrap';
+    wrap.dataset.spread = s;
+    bar.appendChild(wrap);
+    wrap.addEventListener('click', async () => {
+      await goTo(parseInt(wrap.dataset.spread));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+  bar.querySelectorAll('.thumb-wrap').forEach(wrap => {
+    if (wrap.querySelector('canvas')) return;
+    const s = parseInt(wrap.dataset.spread);
+    const n = spreadIdxs(s)[0] + 1;
+    if (thumbCanvases[n]) {
+      const tc = document.createElement('canvas');
+      tc.width = thumbCanvases[n].width; tc.height = thumbCanvases[n].height;
+      tc.getContext('2d').drawImage(thumbCanvases[n], 0, 0);
+      tc.style.cssText = 'width:100%;height:100%;display:block;';
+      wrap.appendChild(tc);
+    }
+  });
+  syncThumbs(currentSpread);
+}
+
+function syncThumbs(s) {
+  document.querySelectorAll('.thumb-wrap').forEach(w => {
+    w.classList.toggle('active', parseInt(w.dataset.spread) === s);
+  });
+  const a = document.querySelector(`.thumb-wrap[data-spread="${s}"]`);
+  if (a) a.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+}
+
+// ── PDF LOAD ───────────────────────────────────────────────────────────
+function gdId(url) { const m=url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/); return m?m[1]:null; }
+function fixUrl(url) {
+  const id=gdId(url);
+  if(id) return `https://drive.google.com/uc?export=download&confirm=t&id=${id}`;
+  if(url.includes('dropbox.com')) return url.replace('?dl=0','?dl=1').replace('www.dropbox.com','dl.dropboxusercontent.com');
+  return url;
+}
+// Fetch the PDF as ArrayBuffer first (avoids Range-request CORS issues)
+// then pass the raw data to pdf.js
+async function fetchAsBuffer(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const buf = await r.arrayBuffer();
+  if (buf.byteLength < 100) throw new Error('Empty response');
+  return buf;
+}
+async function loadFromBuffer(buf) {
+  const t = pdfjsLib.getDocument({
+    data: buf,
+    cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+    cMapPacked: true
+  });
+  return await t.promise;
+}
+async function loadPDF(url) {
+  showLoad(true); hideErr();
+  pageCanvases={}; thumbCanvases={}; isAnimating=false;
+  document.getElementById('spread-current').innerHTML='';
+  document.getElementById('flip-wrapper').innerHTML='';
+  document.getElementById('thumbnail-bar').innerHTML='';
+  try {
+    const id=gdId(url);
+    const base = id ? `https://drive.google.com/uc?export=download&confirm=t&id=${id}` : fixUrl(url);
+    const strats=[
+      base,
+      `https://corsproxy.io/?${encodeURIComponent(base)}`,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(base)}`,
+      `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    ];
+    let loaded=false;
+    for(let i=0;i<strats.length;i++){
+      setBar(10+i*12,`Descargando… (${i+1}/${strats.length})`);
+      try{
+        const buf = await fetchAsBuffer(strats[i]);
+        setBar(60,'Procesando PDF…');
+        pdfDoc = await loadFromBuffer(buf);
+        loaded=true; break;
+      }catch(e){console.warn('strat',i,'failed:',e.message);}
+    }
+    if(!loaded) throw new Error('No se pudo cargar el PDF. Prueba con Dropbox (dl=1).');
+    totalPgs=pdfDoc.numPages;
+    document.getElementById('jump-input').max=totalPgs;
+    setBar(65,'Renderizando primeras páginas…');
+    for(let i=1;i<=Math.min(4,totalPgs);i++){await renderPage(i);setBar(65+i*7,`Página ${i}…`);}
+    setBar(96,'Listo'); await sleep(120);
+    showLoad(false); showViewer();
+    buildThumbs(); currentSpread=0; renderStatic(0);
+    const name=url.split('/').pop().split('?')[0].replace('.pdf','');
+    document.getElementById('doc-title').textContent=decodeURIComponent(name)||'Freepik Magazine';
+    renderAllBg();
+  } catch(err){ showLoad(false); showErr(errMsg(err)); console.error(err); }
+}
+
+function showLoad(v){document.getElementById('loading').classList.toggle('hidden',!v);}
+function setBar(p,t){document.getElementById('load-bar').style.width=p+'%';document.getElementById('load-txt').textContent=t;}
+function showViewer(){
+  document.getElementById('empty').classList.add('hidden');
+  document.getElementById('viewer-area').classList.add('show');
+  document.getElementById('controls').classList.add('show');
+}
+function showErr(m){const e=document.getElementById('error-msg');e.textContent=m;e.classList.add('show');}
+function hideErr(){document.getElementById('error-msg').classList.remove('show');}
+function errMsg(e){
+  if(e.message?.includes('403')) return'⛔ Acceso denegado (403). Verifica que el archivo sea público.';
+  if(e.message?.includes('CORS')||e.name==='UnknownErrorException') return'⛔ Error CORS. Usa GitHub Raw o Dropbox.';
+  if(e.message?.includes('Invalid PDF')) return'⛔ El archivo no parece un PDF válido.';
+  return'⛔ '+(e.message||String(e));
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// ── EVENTS ─────────────────────────────────────────────────────────────
+document.getElementById('btn-load').addEventListener('click',()=>{const u=document.getElementById('url-input').value.trim();if(u)loadPDF(u);});
+document.getElementById('url-input').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('btn-load').click();});
+document.getElementById('btn-next').addEventListener('click',flipFwd);
+document.getElementById('btn-prev').addEventListener('click',flipBck);
+document.getElementById('btn-first').addEventListener('click',()=>goTo(0));
+document.getElementById('btn-last').addEventListener('click',()=>goTo(numSpreads()-1));
+document.getElementById('btn-jump').addEventListener('click',()=>{const v=parseInt(document.getElementById('jump-input').value);if(!isNaN(v)&&v>=1&&v<=totalPgs)goTo(spreadOf(v-1));});
+document.getElementById('jump-input').addEventListener('keydown',e=>{if(e.key==='Enter'){const v=parseInt(e.target.value);if(!isNaN(v)&&v>=1&&v<=totalPgs)goTo(spreadOf(v-1));}});
+document.getElementById('zoom-in').addEventListener('click',()=>{zoomLevel=Math.min(1.8,zoomLevel+.1);document.getElementById('book-container').style.transform=`scale(${zoomLevel})`;});
+document.getElementById('zoom-out').addEventListener('click',()=>{zoomLevel=Math.max(.4,zoomLevel-.1);document.getElementById('book-container').style.transform=`scale(${zoomLevel})`;});
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT') return;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown') flipFwd();
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp') flipBck();
+  if(e.key==='Home') goTo(0);
+  if(e.key==='End') goTo(numSpreads()-1);
+});
+let tx=0;
+document.getElementById('book-container').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;},{passive:true});
+document.getElementById('book-container').addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50){dx<0?flipFwd():flipBck();}});
+
+// AUTO-LOAD
+const params=new URLSearchParams(location.search);
+const pdfUrl=params.get('pdf')||DEFAULT_PDF;
+document.getElementById('url-input').value=pdfUrl;
+loadPDF(pdfUrl);
+</script>
+</body>
+</html>

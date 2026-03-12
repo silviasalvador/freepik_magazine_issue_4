@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Freepik Magazine</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f7f5;--surface:#fff;--border:#e8e8e6;--border-hover:#d0d0ce;
+  --text:#37352f;--text-secondary:#9b9a97;--text-muted:#c7c6c3;
+  --accent:#2383e2;--accent-hover:#1a6fc4;--accent-light:#eaf2fd;
+  --danger:#eb5757;--danger-light:#fff5f5;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --r:6px;
+}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden}
+
+/* TOPBAR */
+.topbar{position:fixed;top:0;left:0;right:0;height:52px;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:12px;z-index:200}
+.topbar-brand{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.brand-icon{width:26px;height:26px;border-radius:5px;background:var(--text);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px}
+.brand-name{font-size:13.5px;font-weight:500;color:var(--text);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-search{flex:1;display:flex;align-items:center;gap:7px;max-width:500px}
+.input-wrap{flex:1;position:relative}
+.input-ico{position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text-muted);pointer-events:none}
+.url-input{width:100%;height:33px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:0 10px 0 28px;font:12.5px/1 'Inter',sans-serif;color:var(--text);outline:none;transition:border .15s,box-shadow .15s}
+.url-input::placeholder{color:var(--text-muted)}
+.url-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(35,131,226,.1);background:#fff}
+.btn-open{height:33px;padding:0 14px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font:500 12.5px 'Inter',sans-serif;cursor:pointer;white-space:nowrap;transition:background .15s}
+.btn-open:hover{background:var(--accent-hover)}
+.topbar-actions{display:flex;gap:5px}
+.icon-btn{width:30px;height:30px;border:1px solid var(--border);background:#fff;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:13px;transition:all .15s}
+.icon-btn:hover{background:var(--bg);border-color:var(--border-hover);color:var(--text)}
+
+/* LOADING */
+.loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:500;gap:14px}
+.loading-screen.hidden{display:none}
+.loading-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:28px 32px;display:flex;flex-direction:column;align-items:center;gap:14px;min-width:280px;box-shadow:var(--shadow-sm)}
+.loading-emoji{font-size:28px}
+.loading-title{font-size:14px;font-weight:600;color:var(--text)}
+.loading-track{width:100%;height:3px;background:var(--border);border-radius:99px;overflow:hidden}
+.loading-fill{height:100%;width:0%;background:var(--accent);border-radius:99px;transition:width .3s ease}
+.loading-sub{font-size:12px;color:var(--text-secondary);align-self:flex-start}
+
+/* EMPTY */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 52px);margin-top:52px;gap:10px;padding:40px 20px;text-align:center}
+.empty-state.hidden{display:none}
+.empty-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:28px;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:420px;width:100%;box-shadow:var(--shadow-sm)}
+.empty-emoji{font-size:32px;margin-bottom:4px}
+.empty-title{font-size:15px;font-weight:600;color:var(--text)}
+.empty-desc{font-size:13px;color:var(--text-secondary);line-height:1.6}
+.divider{width:100%;height:1px;background:var(--border);margin:6px 0}
+.tips-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);align-self:flex-start}
+.tip-row{display:flex;align-items:flex-start;gap:9px;width:100%;text-align:left}
+.badge{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:4px;white-space:nowrap;margin-top:1px;flex-shrink:0}
+.badge-green{background:#f0faf0;color:#2b7a2b;border:1px solid #c8e8c8}
+.badge-blue{background:var(--accent-light);color:var(--accent);border:1px solid #b8d9f5}
+.badge-gray{background:var(--bg);color:var(--text-secondary);border:1px solid var(--border)}
+.tip-text{font-size:12.5px;color:var(--text-secondary);line-height:1.55}
+.tip-text code{font-family:'SF Mono','Fira Code',monospace;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:0 4px;font-size:11px;color:var(--text)}
+.error-box{display:none;width:100%;background:var(--danger-light);border:1px solid rgba(235,87,87,.2);border-radius:6px;padding:10px 13px;font-size:12.5px;color:var(--danger);line-height:1.55;text-align:left}
+.error-box.visible{display:block}
+
+/* SIDEBAR */
+.sidebar{position:fixed;top:52px;left:-236px;bottom:58px;width:228px;background:#fff;border-right:1px solid var(--border);overflow-y:auto;transition:left .25s cubic-bezier(.4,0,.2,1);z-index:150;display:flex;flex-direction:column}
+.sidebar.open{left:0}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sidebar-head{padding:10px 13px 8px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);flex-shrink:0}
+.thumb-list{padding:5px}
+.thumb-item{display:flex;align-items:center;gap:9px;padding:5px 7px;border-radius:5px;cursor:pointer;transition:background .1s;border:1px solid transparent}
+.thumb-item:hover{background:var(--bg)}
+.thumb-item.active{background:var(--accent-light);border-color:rgba(35,131,226,.18)}
+.thumb-img{width:32px;height:44px;background:var(--bg);border:1px solid var(--border);border-radius:3px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.thumb-img canvas{width:100%!important;height:100%!important}
+.thumb-lbl{font-size:12px;color:var(--text-secondary)}
+.thumb-item.active .thumb-lbl{color:var(--accent);font-weight:500}
+
+/* MAIN / FLIPBOOK CANVAS */
+.main{display:none;margin-top:52px;flex:1;align-items:center;justify-content:center;min-height:calc(100vh - 52px - 58px);padding:32px 24px}
+.main.visible{display:flex}
+
+/* The flipbook canvas */
+#flipCanvas{
+  border-radius:4px;
+  box-shadow:0 30px 80px rgba(0,0,0,.18),0 8px 24px rgba(0,0,0,.1);
+  cursor:pointer;
+  display:block;
+}
+
+/* BOTTOM BAR */
+.bottombar{display:none;position:fixed;bottom:0;left:0;right:0;height:54px;background:rgba(255,255,255,.95);backdrop-filter:blur(14px);border-top:1px solid var(--border);align-items:center;justify-content:center;gap:7px;padding:0 16px;z-index:200}
+.bottombar.visible{display:flex}
+.nav-btn{height:30px;padding:0 11px;background:#fff;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;font:500 12px 'Inter',sans-serif;color:var(--text-secondary);display:flex;align-items:center;gap:4px;transition:all .15s}
+.nav-btn:hover{background:var(--bg);border-color:var(--border-hover);color:var(--text)}
+.nav-btn:disabled{opacity:.3;cursor:default;pointer-events:none}
+.nav-btn svg{width:12px;height:12px;fill:currentColor}
+.nav-btn.sq{width:30px;padding:0;justify-content:center}
+.page-pill{height:30px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:0 12px;display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-secondary)}
+.pg-sep{width:1px;height:14px;background:var(--border)}
+.jump-in{width:42px;height:22px;border:1px solid var(--border);border-radius:4px;background:#fff;text-align:center;outline:none;font:11.5px 'Inter',sans-serif;color:var(--text);padding:0 3px}
+.jump-in:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(35,131,226,.1)}
+.jump-go{height:22px;padding:0 7px;background:#fff;border:1px solid var(--border);border-radius:4px;font:11.5px 'Inter',sans-serif;cursor:pointer;color:var(--text-secondary);transition:all .15s}
+.jump-go:hover{background:var(--bg);color:var(--text)}
+.bar-sep{width:1px;height:18px;background:var(--border)}
+.zoom-grp{display:flex}
+.zoom-btn{width:28px;height:28px;background:#fff;border:1px solid var(--border);cursor:pointer;font-size:15px;font-weight:300;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;transition:all .15s}
+.zoom-btn:first-child{border-radius:var(--r) 0 0 var(--r)}
+.zoom-btn:last-child{border-radius:0 var(--r) var(--r) 0;border-left:none}
+.zoom-btn:hover{background:var(--bg);color:var(--text)}
+.kbd-hint{display:none;position:fixed;bottom:63px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--text-muted);pointer-events:none;white-space:nowrap;align-items:center;gap:3px}
+.kbd-hint.visible{display:flex}
+kbd{background:#fff;border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:10px;font-family:inherit;color:var(--text-secondary);box-shadow:0 1px 0 var(--border)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-icon">📄</div>
+    <span class="brand-name" id="docTitle">Freepik Magazine</span>
+  </div>
+  <div class="topbar-search">
+    <div class="input-wrap">
+      <span class="input-ico">🔗</span>
+      <input class="url-input" id="urlInput" type="text" placeholder="Pega la URL de tu PDF…"/>
+    </div>
+    <button class="btn-open" id="btnLoadUrl">Abrir</button>
+  </div>
+  <div class="topbar-actions">
+    <button class="icon-btn" id="thumbToggle">☰</button>
+  </div>
+</div>
+
+<div class="loading-screen hidden" id="loadingScreen">
+  <div class="loading-card">
+    <div class="loading-emoji">📄</div>
+    <div class="loading-title">Cargando documento…</div>
+    <div class="loading-track"><div class="loading-fill" id="loadingBar"></div></div>
+    <div class="loading-sub" id="loadingText">Iniciando…</div>
+  </div>
+</div>
+
+<div class="empty-state" id="emptyState">
+  <div class="empty-card">
+    <div class="empty-emoji">📖</div>
+    <div class="empty-title">Abre un PDF para empezar</div>
+    <div class="empty-desc">Pega la URL directa a tu PDF en la barra superior y pulsa <strong>Abrir</strong>.</div>
+    <div class="divider"></div>
+    <div class="tips-label">Cómo obtener el enlace</div>
+    <div class="tip-row"><span class="badge badge-green">GitHub</span><span class="tip-text">Repo → archivo → clic en <strong>Raw</strong> → copia la URL ✅</span></div>
+    <div class="tip-row"><span class="badge badge-blue">Dropbox</span><span class="tip-text">Link de compartir → cambia <code>dl=0</code> por <code>dl=1</code> ✅</span></div>
+    <div class="tip-row"><span class="badge badge-gray">Drive</span><span class="tip-text">Puede tener bloqueos CORS. Mejor usar GitHub.</span></div>
+    <div class="error-box" id="errorMsg"></div>
+  </div>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-head">Páginas</div>
+  <div class="thumb-list" id="thumbnailPanel"></div>
+</div>
+
+<div class="main" id="mainArea">
+  <canvas id="flipCanvas"></canvas>
+</div>
+
+<div class="bottombar" id="bottombar">
+  <button class="nav-btn sq" id="btnFirst"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+  <button class="nav-btn" id="btnPrev"><svg viewBox="0 0 24 24"><path d="M15.41 16.59 10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>Anterior</button>
+  <div class="page-pill">
+    <span id="pageIndicator">—</span>
+    <div class="pg-sep"></div>
+    <input class="jump-in" type="number" id="jumpInput" min="1" placeholder="pág">
+    <button class="jump-go" id="btnJump">Ir</button>
+  </div>
+  <button class="nav-btn" id="btnNext">Siguiente<svg viewBox="0 0 24 24"><path d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></button>
+  <button class="nav-btn sq" id="btnLast"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM14 6h2v12h-2z"/></svg></button>
+  <div class="bar-sep"></div>
+  <div class="zoom-grp">
+    <button class="zoom-btn" id="zoomOut">−</button>
+    <button class="zoom-btn" id="zoomIn">+</button>
+  </div>
+</div>
+
+<div class="kbd-hint" id="kbdHint"><kbd>←</kbd><kbd>→</kbd>&nbsp;navegar&nbsp;·&nbsp;<kbd>+</kbd><kbd>−</kbd>&nbsp;zoom</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── STATE ─────────────────────────────────────────────
+let pdfDoc=null, pages={}, thumbs={};
+let totalPages=0, totalSpreads=0;
+let currentSpread=0;
+let zoomLevel=1;
+
+// Flip animation state
+let flipAnim=null; // {dir, progress 0..1, fromSpread, startTime}
+const FLIP_DURATION=900; // ms
+
+// Canvas
+const canvas=document.getElementById('flipCanvas');
+const ctx=canvas.getContext('2d');
+const PAGE_W=400, PAGE_H=560;
+
+function setCanvasSize(){
+  canvas.width=(PAGE_W*2)*window.devicePixelRatio;
+  canvas.height=PAGE_H*window.devicePixelRatio;
+  canvas.style.width=(PAGE_W*2)*zoomLevel+'px';
+  canvas.style.height=PAGE_H*zoomLevel+'px';
+  ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
+}
+
+// ── URL LOAD ──────────────────────────────────────────
+document.getElementById('btnLoadUrl').addEventListener('click',()=>{const u=document.getElementById('urlInput').value.trim();if(u)loadPDF(u);});
+document.getElementById('urlInput').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('btnLoadUrl').click();});
+const params=new URLSearchParams(location.search);
+if(params.get('pdf')){document.getElementById('urlInput').value=params.get('pdf');loadPDF(params.get('pdf'));}
+
+function extractGDriveId(url){const m=url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);return m?m[1]:null;}
+function resolveUrl(url){
+  const id=extractGDriveId(url);
+  if(id)return`https://drive.google.com/uc?export=download&confirm=t&id=${id}`;
+  if(url.includes('dropbox.com'))return url.replace('?dl=0','?dl=1').replace('www.dropbox.com','dl.dropboxusercontent.com');
+  return url;
+}
+async function tryLoadPDF(url){
+  const t=pdfjsLib.getDocument({url,cMapUrl:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',cMapPacked:true,withCredentials:false});
+  t.onProgress=p=>{if(p.total>0)setProgress(20+Math.round((p.loaded/p.total)*40),`Descargando… ${Math.round(p.loaded/p.total*100)}%`);};
+  return await t.promise;
+}
+async function loadPDF(url){
+  showLoading(true);hideError();pages={};thumbs={};
+  try{
+    const id=extractGDriveId(url);
+    if(id){
+      setProgress(10,'Google Drive detectado…');
+      const strategies=[
+        `https://drive.google.com/uc?export=download&confirm=t&id=${id}`,
+        `https://corsproxy.io/?${encodeURIComponent(`https://drive.google.com/uc?export=download&confirm=t&id=${id}`)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://drive.google.com/uc?export=download&id=${id}`)}`,
+      ];
+      let loaded=false;
+      for(let i=0;i<strategies.length;i++){
+        setProgress(15+i*10,`Intentando ${i+1}/${strategies.length}…`);
+        try{pdfDoc=await tryLoadPDF(strategies[i]);loaded=true;break;}catch(e){if(i===strategies.length-1)throw e;}
+      }
+    } else {
+      pdfDoc=await tryLoadPDF(resolveUrl(url));
+    }
+    totalPages=pdfDoc.numPages;
+    totalSpreads=Math.ceil((totalPages+1)/2);
+    document.getElementById('jumpInput').max=totalPages;
+    setProgress(65,`Renderizando ${totalPages} páginas…`);
+    await preRender();
+    setProgress(100,'Listo');
+    await sleep(200);
+    showLoading(false);showBook();
+    setCanvasSize();
+    buildThumbs();
+    currentSpread=0;flipAnim=null;
+    drawSpread();
+    const name=url.split('/').pop().split('?')[0].replace('.pdf','');
+    document.getElementById('docTitle').textContent=decodeURIComponent(name)||'Freepik Magazine';
+  }catch(err){showLoading(false);showError(hint(err));console.error(err);}
+}
+async function preRender(){
+  for(let i=1;i<=totalPages;i++){
+    const pg=await pdfDoc.getPage(i);
+    // Full res
+    const vp=pg.getViewport({scale:1.6});
+    const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;
+    await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+    pages[i]=c;
+    // Thumb
+    const tv=pg.getViewport({scale:.12});
+    const tc=document.createElement('canvas');tc.width=tv.width;tc.height=tv.height;
+    await pg.render({canvasContext:tc.getContext('2d'),viewport:tv}).promise;
+    thumbs[i]=tc;
+    setProgress(65+Math.round((i/totalPages)*30),`Página ${i} de ${totalPages}…`);
+  }
+}
+
+// ── SPREAD LOGIC ──────────────────────────────────────
+function getSpread(s){
+  if(s===0)return{left:null,right:1};
+  const b=(s-1)*2+2;
+  return{left:b<=totalPages?b:null,right:b+1<=totalPages?b+1:null};
+}
+
+// ── CANVAS DRAWING ────────────────────────────────────
+function drawPage(img,x,y,w,h,side){
+  ctx.save();
+  // Clip to page rect
+  ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+  if(img){
+    ctx.drawImage(img,x,y,w,h);
+  } else {
+    ctx.fillStyle='#f9f9f8';ctx.fillRect(x,y,w,h);
+  }
+  // Inner shadow
+  const grad=ctx.createLinearGradient(
+    side==='left'?x:x+w, y,
+    side==='left'?x+w*0.25:x+w*0.75, y
+  );
+  grad.addColorStop(0,'rgba(0,0,0,0.07)');
+  grad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=grad;ctx.fillRect(x,y,w,h);
+  ctx.restore();
+}
+
+function drawSpine(){
+  const x=PAGE_W-1;
+  const g=ctx.createLinearGradient(x-4,0,x+4,0);
+  g.addColorStop(0,'rgba(0,0,0,0.08)');
+  g.addColorStop(0.5,'rgba(180,170,160,0.5)');
+  g.addColorStop(1,'rgba(0,0,0,0.08)');
+  ctx.fillStyle=g;
+  ctx.fillRect(x-3,0,6,PAGE_H);
+}
+
+function drawShadowOnPage(x,y,w,h,fromLeft){
+  const g=ctx.createLinearGradient(
+    fromLeft?x:x+w, y,
+    fromLeft?x+w*0.4:x+w*0.6, y
+  );
+  g.addColorStop(0,'rgba(0,0,0,0.22)');
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
+}
+
+// The real curl: draw a flipping page using bezier distortion on canvas
+function drawFlippingPage(img,progress,dir){
+  // progress: 0=start 1=end
+  // dir: 'fwd' (right page flips left) or 'bck' (left page flips right)
+  const w=PAGE_W, h=PAGE_H;
+
+  // Eased progress for more organic feel
+  const t=easeInOutCubic(progress);
+
+  if(dir==='fwd'){
+    // Right page flips to left
+    // Page rotates from right side (x=PAGE_W) sweeping left
+    const angle=t*Math.PI; // 0 -> PI
+    const cosA=Math.cos(angle);
+    const scaleX=Math.abs(cosA);
+    const flipped=cosA<0;
+
+    // Page position: starts at PAGE_W, sweeps to 0
+    const pageX=cosA>=0 ? PAGE_W : PAGE_W*(1+cosA);
+    const pageW=w*scaleX;
+
+    if(pageW<1)return;
+
+    ctx.save();
+    ctx.beginPath();ctx.rect(pageX,0,pageW,h);ctx.clip();
+
+    if(!flipped){
+      // Front face (original right page)
+      if(img.front) ctx.drawImage(img.front, pageX, 0, pageW, h);
+      else{ctx.fillStyle='#f9f9f8';ctx.fillRect(pageX,0,pageW,h);}
+      // Curl shadow on front — increases toward spine
+      const sh=ctx.createLinearGradient(pageX+pageW,0,pageX,0);
+      sh.addColorStop(0,'rgba(0,0,0,0.0)');
+      sh.addColorStop(0.6,'rgba(0,0,0,0.0)');
+      sh.addColorStop(1,'rgba(0,0,0,0.28)');
+      ctx.fillStyle=sh;ctx.fillRect(pageX,0,pageW,h);
+    } else {
+      // Back face (next left page) — mirror
+      ctx.save();
+      ctx.translate(pageX+pageW,0);ctx.scale(-1,1);
+      if(img.back) ctx.drawImage(img.back, 0, 0, pageW, h);
+      else{ctx.fillStyle='#f0ede8';ctx.fillRect(0,0,pageW,h);}
+      // Curl highlight on back
+      const sh2=ctx.createLinearGradient(0,0,pageW,0);
+      sh2.addColorStop(0,'rgba(255,255,255,0.18)');
+      sh2.addColorStop(0.4,'rgba(255,255,255,0.0)');
+      ctx.fillStyle=sh2;ctx.fillRect(0,0,pageW,h);
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // Shadow cast on the left page
+    if(cosA>-0.1){
+      const shadowW=PAGE_W*(1-scaleX)*0.7;
+      const sg=ctx.createLinearGradient(PAGE_W,0,PAGE_W-shadowW,0);
+      sg.addColorStop(0,'rgba(0,0,0,0.18)');
+      sg.addColorStop(1,'rgba(0,0,0,0.0)');
+      ctx.fillStyle=sg;ctx.fillRect(PAGE_W-shadowW,0,shadowW,h);
+    }
+    // Shadow cast on right remaining area
+    if(cosA<0.1){
+      const shadowW=PAGE_W*(1-scaleX)*0.6;
+      const sg=ctx.createLinearGradient(PAGE_W,0,PAGE_W+shadowW,0);
+      sg.addColorStop(0,'rgba(0,0,0,0.14)');
+      sg.addColorStop(1,'rgba(0,0,0,0.0)');
+      ctx.fillStyle=sg;ctx.fillRect(PAGE_W,0,shadowW,h);
+    }
+
+  } else {
+    // Backward: left page flips right
+    const angle=t*Math.PI;
+    const cosA=Math.cos(angle);
+    const scaleX=Math.abs(cosA);
+    const flipped=cosA<0;
+    const pageW=w*scaleX;
+    const pageX=cosA>=0 ? PAGE_W-w*scaleX : 0;
+
+    if(pageW<1)return;
+
+    ctx.save();
+    ctx.beginPath();ctx.rect(pageX,0,pageW,h);ctx.clip();
+
+    if(!flipped){
+      if(img.front) ctx.drawImage(img.front, pageX, 0, pageW, h);
+      else{ctx.fillStyle='#f9f9f8';ctx.fillRect(pageX,0,pageW,h);}
+      const sh=ctx.createLinearGradient(pageX,0,pageX+pageW,0);
+      sh.addColorStop(0,'rgba(0,0,0,0.0)');
+      sh.addColorStop(0.6,'rgba(0,0,0,0.0)');
+      sh.addColorStop(1,'rgba(0,0,0,0.22)');
+      ctx.fillStyle=sh;ctx.fillRect(pageX,0,pageW,h);
+    } else {
+      ctx.save();
+      ctx.translate(pageX,0);
+      if(img.back) ctx.drawImage(img.back, 0, 0, pageW, h);
+      else{ctx.fillStyle='#f0ede8';ctx.fillRect(0,0,pageW,h);}
+      const sh2=ctx.createLinearGradient(pageW,0,0,0);
+      sh2.addColorStop(0,'rgba(255,255,255,0.15)');
+      sh2.addColorStop(0.4,'rgba(255,255,255,0.0)');
+      ctx.fillStyle=sh2;ctx.fillRect(0,0,pageW,h);
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // Shadows
+    if(cosA>-0.1){
+      const shadowW=PAGE_W*(1-scaleX)*0.6;
+      const sg=ctx.createLinearGradient(PAGE_W,0,PAGE_W+shadowW,0);
+      sg.addColorStop(0,'rgba(0,0,0,0.16)');
+      sg.addColorStop(1,'rgba(0,0,0,0.0)');
+      ctx.fillStyle=sg;ctx.fillRect(PAGE_W,0,shadowW,h);
+    }
+    if(cosA<0.1){
+      const shadowW=PAGE_W*(1-scaleX)*0.5;
+      const sg=ctx.createLinearGradient(PAGE_W,0,PAGE_W-shadowW,0);
+      sg.addColorStop(0,'rgba(0,0,0,0.12)');
+      sg.addColorStop(1,'rgba(0,0,0,0.0)');
+      ctx.fillStyle=sg;ctx.fillRect(PAGE_W-shadowW,0,shadowW,h);
+    }
+  }
+}
+
+function drawSpread(){
+  ctx.clearRect(0,0,PAGE_W*2,PAGE_H);
+
+  if(flipAnim){
+    const now=performance.now();
+    const elapsed=now-flipAnim.startTime;
+    const progress=Math.min(elapsed/FLIP_DURATION,1);
+
+    const fromS=flipAnim.fromSpread;
+    const toS=flipAnim.dir==='fwd'?fromS+1:fromS-1;
+    const{left:fl,right:fr}=getSpread(fromS);
+    const{left:tl,right:tr}=getSpread(toS);
+
+    if(flipAnim.dir==='fwd'){
+      // Draw destination spread underneath
+      drawPage(tl?pages[tl]:null,0,0,PAGE_W,PAGE_H,'left');
+      drawPage(tr?pages[tr]:null,PAGE_W,0,PAGE_W,PAGE_H,'right');
+      // Draw source left page on top (stays)
+      drawPage(fl?pages[fl]:null,0,0,PAGE_W,PAGE_H,'left');
+      // Animate right page flipping
+      drawFlippingPage({front:fr?pages[fr]:null,back:tl?pages[tl]:null},progress,'fwd');
+    } else {
+      // Draw destination spread underneath
+      drawPage(tl?pages[tl]:null,0,0,PAGE_W,PAGE_H,'left');
+      drawPage(tr?pages[tr]:null,PAGE_W,0,PAGE_W,PAGE_H,'right');
+      // Draw source right page on top (stays)
+      drawPage(fr?pages[fr]:null,PAGE_W,0,PAGE_W,PAGE_H,'right');
+      // Animate left page flipping
+      drawFlippingPage({front:fl?pages[fl]:null,back:tr?pages[tr]:null},progress,'bck');
+    }
+
+    drawSpine();
+
+    if(progress<1){
+      requestAnimationFrame(drawSpread);
+    } else {
+      currentSpread=toS;
+      flipAnim=null;
+      updInd();updBtns();updThumb();
+      drawSpread();
+    }
+  } else {
+    const{left,right}=getSpread(currentSpread);
+    drawPage(left?pages[left]:null,0,0,PAGE_W,PAGE_H,'left');
+    drawPage(right?pages[right]:null,PAGE_W,0,PAGE_W,PAGE_H,'right');
+    drawSpine();
+  }
+}
+
+function easeInOutCubic(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
+
+// ── FLIP TRIGGERS ─────────────────────────────────────
+function flipFwd(){
+  if(flipAnim||currentSpread>=totalSpreads-1)return;
+  flipAnim={dir:'fwd',fromSpread:currentSpread,startTime:performance.now()};
+  requestAnimationFrame(drawSpread);
+}
+function flipBck(){
+  if(flipAnim||currentSpread<=0)return;
+  flipAnim={dir:'bck',fromSpread:currentSpread,startTime:performance.now()};
+  requestAnimationFrame(drawSpread);
+}
+function goTo(n){
+  n=Math.max(1,Math.min(totalPages,n));
+  for(let s=0;s<totalSpreads;s++){const{left,right}=getSpread(s);if(left===n||right===n){currentSpread=s;break;}}
+  flipAnim=null;drawSpread();updInd();updBtns();updThumb();
+}
+
+// Click on canvas to flip
+canvas.addEventListener('click',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const x=(e.clientX-rect.left)/zoomLevel;
+  if(x<PAGE_W*0.35)flipBck();
+  else if(x>PAGE_W*1.65)flipFwd();
+});
+
+// ── UI HELPERS ────────────────────────────────────────
+function updInd(){
+  const{left,right}=getSpread(currentSpread);
+  const el=document.getElementById('pageIndicator');
+  if(!left&&right===1)el.textContent=`1 / ${totalPages}`;
+  else if(!right)el.textContent=`${left} / ${totalPages}`;
+  else el.textContent=`${left}–${right} / ${totalPages}`;
+}
+function updBtns(){
+  ['btnPrev','btnFirst'].forEach(id=>document.getElementById(id).disabled=currentSpread<=0);
+  ['btnNext','btnLast'].forEach(id=>document.getElementById(id).disabled=currentSpread>=totalSpreads-1);
+}
+function buildThumbs(){
+  const p=document.getElementById('thumbnailPanel');p.innerHTML='';
+  for(let s=0;s<totalSpreads;s++){
+    const{left,right}=getSpread(s);
+    const item=document.createElement('div');item.className='thumb-item';item.dataset.spread=s;
+    const tp=right||left;
+    const wrap=document.createElement('div');wrap.className='thumb-img';
+    if(tp&&thumbs[tp]){const tc=thumbs[tp].cloneNode();tc.getContext('2d').drawImage(thumbs[tp],0,0);wrap.appendChild(tc);}
+    const lbl=document.createElement('div');lbl.className='thumb-lbl';
+    lbl.textContent=!left?'Pág 1':!right?`Pág ${left}`:`${left}–${right}`;
+    item.appendChild(wrap);item.appendChild(lbl);
+    item.addEventListener('click',()=>{currentSpread=s;flipAnim=null;drawSpread();updInd();updBtns();updThumb();document.getElementById('sidebar').classList.remove('open');});
+    p.appendChild(item);
+  }
+}
+function updThumb(){
+  document.querySelectorAll('.thumb-item').forEach(el=>el.classList.toggle('active',parseInt(el.dataset.spread)===currentSpread));
+  const a=document.querySelector('.thumb-item.active');if(a)a.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function showLoading(v){document.getElementById('loadingScreen').classList.toggle('hidden',!v);}
+function setProgress(p,t){document.getElementById('loadingBar').style.width=p+'%';document.getElementById('loadingText').textContent=t;}
+function showBook(){
+  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('mainArea').classList.add('visible');
+  document.getElementById('bottombar').classList.add('visible');
+  document.getElementById('kbdHint').classList.add('visible');
+}
+function showError(m){const e=document.getElementById('errorMsg');e.textContent=m;e.classList.add('visible');}
+function hideError(){document.getElementById('errorMsg').classList.remove('visible');}
+function hint(err){
+  if(err.message?.includes('403'))return'⛔ Acceso denegado (403). Asegúrate de que el archivo esté público.';
+  if(err.message?.includes('CORS')||err.name==='UnknownErrorException')return'⛔ Error de CORS. Sube el PDF a GitHub o Dropbox.';
+  if(err.message?.includes('Invalid PDF'))return'⛔ El archivo no parece ser un PDF válido.';
+  return'⛔ '+(err.message||String(err));
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// ── EVENTS ────────────────────────────────────────────
+document.getElementById('btnNext').addEventListener('click',flipFwd);
+document.getElementById('btnPrev').addEventListener('click',flipBck);
+document.getElementById('btnFirst').addEventListener('click',()=>{currentSpread=0;flipAnim=null;drawSpread();updInd();updBtns();updThumb();});
+document.getElementById('btnLast').addEventListener('click',()=>{currentSpread=totalSpreads-1;flipAnim=null;drawSpread();updInd();updBtns();updThumb();});
+document.getElementById('btnJump').addEventListener('click',()=>{const v=parseInt(document.getElementById('jumpInput').value);if(!isNaN(v))goTo(v);});
+document.getElementById('jumpInput').addEventListener('keydown',e=>{if(e.key==='Enter'){const v=parseInt(e.target.value);if(!isNaN(v))goTo(v);}});
+document.getElementById('thumbToggle').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')flipFwd();
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')flipBck();
+  if(e.key==='Home'){currentSpread=0;flipAnim=null;drawSpread();updInd();updBtns();}
+  if(e.key==='End'){currentSpread=totalSpreads-1;flipAnim=null;drawSpread();updInd();updBtns();}
+});
+let tx=0;
+canvas.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
+canvas.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50)dx<0?flipFwd():flipBck();});
+document.getElementById('zoomIn').addEventListener('click',()=>{zoomLevel=Math.min(1.5,zoomLevel+.1);canvas.style.width=(PAGE_W*2)*zoomLevel+'px';canvas.style.height=PAGE_H*zoomLevel+'px';});
+document.getElementById('zoomOut').addEventListener('click',()=>{zoomLevel=Math.max(.4,zoomLevel-.1);canvas.style.width=(PAGE_W*2)*zoomLevel+'px';canvas.style.height=PAGE_H*zoomLevel+'px';});
+window.addEventListener('resize',()=>{if(pdfDoc)drawSpread();});
+</script>
+</body>
+</html>

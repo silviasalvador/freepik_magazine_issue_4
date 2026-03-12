@@ -33,23 +33,25 @@ body{background:#4d4d4d;font-family:'Segoe UI',sans-serif;display:flex;flex-dire
 .fp{position:absolute;border-radius:2px;}
 .fp{backface-visibility:hidden;-webkit-backface-visibility:hidden;}
 /* Primera mitad: página sale hacia la izquierda (pivot derecho → gira positivo) */
-/* flyF: página derecha gira hacia la izquierda pivotando en su borde izquierdo (espina) */
+/* flyF1: pivot LEFT → rotateY(90) dobla hacia la izquierda */
 @keyframes flyF1{
-  0%  {transform:rotateY(0deg);  filter:brightness(1);  box-shadow:-8px 0 20px rgba(0,0,0,.3);}
-  100%{transform:rotateY(-90deg);filter:brightness(.3); box-shadow:-28px 0 40px rgba(0,0,0,.6);}
-}
-@keyframes flyB1{
   0%  {transform:rotateY(0deg); filter:brightness(1);  box-shadow:8px 0 20px rgba(0,0,0,.3);}
   100%{transform:rotateY(90deg);filter:brightness(.3); box-shadow:28px 0 40px rgba(0,0,0,.6);}
 }
-/* Segunda mitad: página aparece en el lado izquierdo */
-@keyframes flyF2{
-  0%  {transform:rotateY(90deg); filter:brightness(.3); box-shadow:28px 0 40px rgba(0,0,0,.6);}
-  100%{transform:rotateY(0deg);  filter:brightness(.85);box-shadow:4px 0 8px rgba(0,0,0,.2);}
+/* flyB1: pivot RIGHT → rotateY(-90) dobla hacia la derecha */
+@keyframes flyB1{
+  0%  {transform:rotateY(0deg);  filter:brightness(1);  box-shadow:-8px 0 20px rgba(0,0,0,.3);}
+  100%{transform:rotateY(-90deg);filter:brightness(.3); box-shadow:-28px 0 40px rgba(0,0,0,.6);}
 }
-@keyframes flyB2{
+/* flyF2: pivot RIGHT, llega desde la derecha (90→0) */
+@keyframes flyF2{
   0%  {transform:rotateY(-90deg);filter:brightness(.3); box-shadow:-28px 0 40px rgba(0,0,0,.6);}
   100%{transform:rotateY(0deg);  filter:brightness(.85);box-shadow:-4px 0 8px rgba(0,0,0,.2);}
+}
+/* flyB2: pivot LEFT, llega desde la izquierda (-90→0) */
+@keyframes flyB2{
+  0%  {transform:rotateY(90deg); filter:brightness(.3); box-shadow:28px 0 40px rgba(0,0,0,.6);}
+  100%{transform:rotateY(0deg);  filter:brightness(.85);box-shadow:4px 0 8px rgba(0,0,0,.2);}
 }
 
 #controls{display:none;flex-direction:column;align-items:center;gap:6px;padding:8px 0 16px;width:100%;}
@@ -200,9 +202,11 @@ function flip(dir){
 
   const bk=document.getElementById('book');
   const bw=bk.offsetWidth,bh=bk.offsetHeight;
-  const isSingle=sidxs(cur).length===1;
-  const pw=isSingle?bw:Math.round(bw/2),ph=bh;
-  const originX=isSingle?(dir>0?0:bw-pw):(dir>0?bw/2:bw/2-pw);
+  const currentIsSingle=sidxs(cur).length===1;
+  const nextIsSingle=sidxs(nxt).length===1;
+  const ph=bh;
+  const pw=currentIsSingle?bw:Math.round(bw/2);
+  const originX=dir>0?(currentIsSingle?0:bw/2):(currentIsSingle?bw-pw:bw/2-pw);
   const half=0.35;
 
   const fw=document.getElementById('fw');
@@ -225,9 +229,8 @@ function flip(dir){
 
     const fi2=dir>0?sidxs(nxt)[0]:sidxs(nxt)[sidxs(nxt).length-1];
     const src2=PC[fi2+1]||src;
-    const isSingle2=sidxs(nxt).length===1;
-    const pw2=isSingle2?bw:Math.round(bw/2);
-    const originX2=isSingle2?(dir>0?bw-pw2:0):(dir>0?bw/2-pw2:bw/2);
+    const pw2=nextIsSingle?bw:Math.round(bw/2);
+    const originX2=dir>0?(nextIsSingle?0:bw/2-pw2):(nextIsSingle?bw-pw2:bw/2);
     const fc2=document.createElement('canvas');
     fc2.width=src2.width;fc2.height=src2.height;
     fc2.getContext('2d').drawImage(src2,0,0);

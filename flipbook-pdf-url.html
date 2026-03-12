@@ -316,17 +316,18 @@ function drawPage(img,x,y,w,h,side){
   ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
   if(img){
     ctx.drawImage(img,x,y,w,h);
+    // Inner shadow only on real pages
+    const grad=ctx.createLinearGradient(
+      side==='left'?x:x+w, y,
+      side==='left'?x+w*0.25:x+w*0.75, y
+    );
+    grad.addColorStop(0,'rgba(0,0,0,0.03)');
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=grad;ctx.fillRect(x,y,w,h);
   } else {
-    ctx.fillStyle='#f9f9f8';ctx.fillRect(x,y,w,h);
+    // No page: draw fondo (portada izquierda vacía)
+    ctx.fillStyle='#4d4d4d';ctx.fillRect(x,y,w,h);
   }
-  // Inner shadow
-  const grad=ctx.createLinearGradient(
-    side==='left'?x:x+w, y,
-    side==='left'?x+w*0.25:x+w*0.75, y
-  );
-  grad.addColorStop(0,'rgba(0,0,0,0.03)');
-  grad.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=grad;ctx.fillRect(x,y,w,h);
   ctx.restore();
 }
 
@@ -474,20 +475,6 @@ function drawFlippingPage(img,progress,dir){
 function drawSpread(){
   ctx.clearRect(0,0,PAGE_W*2,PAGE_H);
 
-  // Cover: only right page, centered
-  const isCover = currentSpread===0 && !flipAnim;
-  const isLastBlank = currentSpread===totalSpreads-1 && getSpread(currentSpread).right===null && !flipAnim;
-
-  if(isCover){
-    const{right}=getSpread(0);
-    // Left side: background color only, no white page
-    ctx.fillStyle='#4d4d4d';ctx.fillRect(0,0,PAGE_W,PAGE_H);
-    // Right side: portada normal
-    drawPage(right?pages[right]:null,PAGE_W,0,PAGE_W,PAGE_H,'right');
-    drawSpine();
-    return;
-  }
-
   if(flipAnim){
     const now=performance.now();
     const elapsed=now-flipAnim.startTime;
@@ -498,26 +485,21 @@ function drawSpread(){
     const{left:fl,right:fr}=getSpread(fromS);
     const{left:tl,right:tr}=getSpread(toS);
 
-    // Special: flipping from cover (spread 0)
-    if(fromS===0 && flipAnim.dir==='fwd'){
-      ctx.fillStyle='#4d4d4d';ctx.fillRect(0,0,PAGE_W*2,PAGE_H);
+    if(flipAnim.dir==='fwd'){
+      // destination underneath
       drawPage(tl?pages[tl]:null,0,0,PAGE_W,PAGE_H,'left');
       drawPage(tr?pages[tr]:null,PAGE_W,0,PAGE_W,PAGE_H,'right');
-      drawFlippingPage({front:fr?pages[fr]:null,back:tl?pages[tl]:null},progress,'fwd');
-    } else if(toS===0 && flipAnim.dir==='bck'){
-      ctx.fillStyle='#4d4d4d';ctx.fillRect(0,0,PAGE_W*2,PAGE_H);
+      // source left stays
       drawPage(fl?pages[fl]:null,0,0,PAGE_W,PAGE_H,'left');
-      drawPage(fr?pages[fr]:null,PAGE_W,0,PAGE_W,PAGE_H,'right');
-      drawFlippingPage({front:fl?pages[fl]:null,back:fr?pages[fr]:null},progress,'bck');
-    } else if(flipAnim.dir==='fwd'){
-      drawPage(tl?pages[tl]:null,0,0,PAGE_W,PAGE_H,'left');
-      drawPage(tr?pages[tr]:null,PAGE_W,0,PAGE_W,PAGE_H,'right');
-      drawPage(fl?pages[fl]:null,0,0,PAGE_W,PAGE_H,'left');
+      // right page flips
       drawFlippingPage({front:fr?pages[fr]:null,back:tl?pages[tl]:null},progress,'fwd');
     } else {
+      // destination underneath
       drawPage(tl?pages[tl]:null,0,0,PAGE_W,PAGE_H,'left');
       drawPage(tr?pages[tr]:null,PAGE_W,0,PAGE_W,PAGE_H,'right');
+      // source right stays
       drawPage(fr?pages[fr]:null,PAGE_W,0,PAGE_W,PAGE_H,'right');
+      // left page flips
       drawFlippingPage({front:fl?pages[fl]:null,back:tr?pages[tr]:null},progress,'bck');
     }
 

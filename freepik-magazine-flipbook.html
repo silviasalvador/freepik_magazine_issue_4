@@ -200,46 +200,41 @@ function flip(dir){
 
   const bk=document.getElementById('book');
   const bw=bk.offsetWidth,bh=bk.offsetHeight;
-  // isSingle: solo la página ACTUAL importa para el pivote de salida
   const isSingle=sidxs(cur).length===1;
-  const pw=Math.round(bw/2),ph=bh;
-  // Si es portada (1 sola página), el pivote está en el borde derecho (=bw), si no en bw/2
-  const sx=isSingle?bw:bw/2;
+  const pw=isSingle?bw:Math.round(bw/2),ph=bh;
+  const originX=isSingle?(dir>0?0:bw-pw):(dir>0?bw/2:bw/2-pw);
   const half=0.35;
 
   const fw=document.getElementById('fw');
   fw.innerHTML='';
 
-  // MITAD 1: página sale — fondo NO cambia todavía
+  // MITAD 1: página sale
   const fc1=document.createElement('canvas');
   fc1.width=src.width;fc1.height=src.height;
   fc1.getContext('2d').drawImage(src,0,0);
   fc1.style.cssText=`display:block;width:${pw}px;height:${ph}px;`;
   const fp1=document.createElement('div');
   fp1.className='fp';
-  // fwd: página está a la derecha de la espina → left=sx, pivot izquierdo
-  // bck: página está a la izquierda de la espina → left=sx-pw, pivot derecho
-  fp1.style.cssText=`width:${pw}px;height:${ph}px;position:absolute;top:0;left:${dir>0?sx:sx-pw}px;transform-origin:${dir>0?'left':'right'} center;animation:${dir>0?'flyF1':'flyB1'} ${half}s ease-in forwards;`;
+  fp1.style.cssText=`width:${pw}px;height:${ph}px;position:absolute;top:0;left:${originX}px;transform-origin:${dir>0?'left':'right'} center;animation:${dir>0?'flyF1':'flyB1'} ${half}s ease-in forwards;`;
   fp1.appendChild(fc1);
   fw.appendChild(fp1);
 
   fp1.addEventListener('animationend',()=>{
     fp1.remove();
-
-    // Cambiar spread cuando la página está de canto
     cur=nxt; draw(cur);
 
     const fi2=dir>0?sidxs(nxt)[0]:sidxs(nxt)[sidxs(nxt).length-1];
     const src2=PC[fi2+1]||src;
+    const isSingle2=sidxs(nxt).length===1;
+    const pw2=isSingle2?bw:Math.round(bw/2);
+    const originX2=isSingle2?(dir>0?bw-pw2:0):(dir>0?bw/2-pw2:bw/2);
     const fc2=document.createElement('canvas');
     fc2.width=src2.width;fc2.height=src2.height;
     fc2.getContext('2d').drawImage(src2,0,0);
-    fc2.style.cssText=`display:block;width:${pw}px;height:${ph}px;`;
-    // fwd: llega al lado izquierdo → left=sx-pw, pivot derecho
-    // bck: llega al lado derecho → left=sx, pivot izquierdo
+    fc2.style.cssText=`display:block;width:${pw2}px;height:${ph}px;`;
     const fp2=document.createElement('div');
     fp2.className='fp';
-    fp2.style.cssText=`width:${pw}px;height:${ph}px;position:absolute;top:0;left:${dir>0?sx-pw:sx}px;transform-origin:${dir>0?'right':'left'} center;animation:${dir>0?'flyF2':'flyB2'} ${half}s ease-out forwards;`;
+    fp2.style.cssText=`width:${pw2}px;height:${ph}px;position:absolute;top:0;left:${originX2}px;transform-origin:${dir>0?'right':'left'} center;animation:${dir>0?'flyF2':'flyB2'} ${half}s ease-out forwards;`;
     fp2.appendChild(fc2);
     fw.appendChild(fp2);
 

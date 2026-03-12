@@ -493,9 +493,21 @@ function fixUrl(url) {
   if(url.includes('dropbox.com')) return url.replace('?dl=0','?dl=1').replace('www.dropbox.com','dl.dropboxusercontent.com');
   return url;
 }
-async function tryLoad(url) {
-  const t=pdfjsLib.getDocument({url,cMapUrl:'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',cMapPacked:true,withCredentials:false});
-  t.onProgress=p=>{if(p.total>0)setBar(20+Math.round(p.loaded/p.total*40),`Descargando… ${Math.round(p.loaded/p.total*100)}%`);};
+// Fetch the PDF as ArrayBuffer first (avoids Range-request CORS issues)
+// then pass the raw data to pdf.js
+async function fetchAsBuffer(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const buf = await r.arrayBuffer();
+  if (buf.byteLength < 100) throw new Error('Empty response');
+  return buf;
+}
+async function loadFromBuffer(buf) {
+  const t = pdfjsLib.getDocument({
+    data: buf,
+    cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+    cMapPacked: true
+  });
   return await t.promise;
 }
 async function loadPDF(url) {
@@ -506,19 +518,24 @@ async function loadPDF(url) {
   document.getElementById('thumbnail-bar').innerHTML='';
   try {
     const id=gdId(url);
-    if(id){
-      const strats=[
-        `https://drive.google.com/uc?export=download&confirm=t&id=${id}`,
-        `https://corsproxy.io/?${encodeURIComponent(`https://drive.google.com/uc?export=download&confirm=t&id=${id}`)}`,
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://drive.google.com/uc?export=download&id=${id}`)}`,
-      ];
-      for(let i=0;i<strats.length;i++){
-        setBar(12+i*10,`Intentando ${i+1}/${strats.length}…`);
-        try{pdfDoc=await tryLoad(strats[i]);break;}catch(e){if(i===strats.length-1)throw e;}
-      }
-    } else {
-      pdfDoc=await tryLoad(fixUrl(url));
+    const base = id ? `https://drive.google.com/uc?export=download&confirm=t&id=${id}` : fixUrl(url);
+    const strats=[
+      base,
+      `https://corsproxy.io/?${encodeURIComponent(base)}`,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(base)}`,
+      `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    ];
+    let loaded=false;
+    for(let i=0;i<strats.length;i++){
+      setBar(10+i*12,`Descargando… (${i+1}/${strats.length})`);
+      try{
+        const buf = await fetchAsBuffer(strats[i]);
+        setBar(60,'Procesando PDF…');
+        pdfDoc = await loadFromBuffer(buf);
+        loaded=true; break;
+      }catch(e){console.warn('strat',i,'failed:',e.message);}
     }
+    if(!loaded) throw new Error('No se pudo cargar el PDF. Prueba con Dropbox (dl=1).');
     totalPgs=pdfDoc.numPages;
     document.getElementById('jump-input').max=totalPgs;
     setBar(65,'Renderizando primeras páginas…');

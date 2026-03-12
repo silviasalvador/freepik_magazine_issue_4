@@ -32,22 +32,22 @@ body{background:#4d4d4d;font-family:'Segoe UI',sans-serif;display:flex;flex-dire
 #fw{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;overflow:visible;z-index:10;perspective:1400px;perspective-origin:center center;}
 .fp{position:absolute;border-radius:2px;}
 .fp{backface-visibility:hidden;-webkit-backface-visibility:hidden;}
-/* Primera mitad: página sale (0 → 90) */
+/* Primera mitad: página sale hacia la izquierda (pivot derecho → gira positivo) */
 @keyframes flyF1{
-  0%  {transform:rotateY(0deg);  filter:brightness(1);  box-shadow:-8px 0 20px rgba(0,0,0,.3);}
-  100%{transform:rotateY(-90deg);filter:brightness(.3); box-shadow:-28px 0 40px rgba(0,0,0,.6);}
-}
-@keyframes flyB1{
   0%  {transform:rotateY(0deg); filter:brightness(1);  box-shadow:8px 0 20px rgba(0,0,0,.3);}
   100%{transform:rotateY(90deg);filter:brightness(.3); box-shadow:28px 0 40px rgba(0,0,0,.6);}
 }
-/* Segunda mitad: página llega al otro lado (90 → 0) desde el canto */
+@keyframes flyB1{
+  0%  {transform:rotateY(0deg);  filter:brightness(1);  box-shadow:-8px 0 20px rgba(0,0,0,.3);}
+  100%{transform:rotateY(-90deg);filter:brightness(.3); box-shadow:-28px 0 40px rgba(0,0,0,.6);}
+}
+/* Segunda mitad: página llega al lado izquierdo */
 @keyframes flyF2{
-  0%  {transform:rotateY(90deg); filter:brightness(.3); box-shadow:-28px 0 40px rgba(0,0,0,.6);}
+  0%  {transform:rotateY(-90deg);filter:brightness(.3); box-shadow:-28px 0 40px rgba(0,0,0,.6);}
   100%{transform:rotateY(0deg);  filter:brightness(.85);box-shadow:-4px 0 8px rgba(0,0,0,.2);}
 }
 @keyframes flyB2{
-  0%  {transform:rotateY(-90deg);filter:brightness(.3); box-shadow:28px 0 40px rgba(0,0,0,.6);}
+  0%  {transform:rotateY(90deg); filter:brightness(.3); box-shadow:28px 0 40px rgba(0,0,0,.6);}
   100%{transform:rotateY(0deg);  filter:brightness(.85);box-shadow:4px 0 8px rgba(0,0,0,.2);}
 }
 
@@ -214,7 +214,7 @@ function flip(dir){
   fc1.style.cssText=`display:block;width:${pw}px;height:${ph}px;`;
   const fp1=document.createElement('div');
   fp1.className='fp';
-  fp1.style.cssText=`width:${pw}px;height:${ph}px;position:absolute;top:0;left:${dir>0?sx:sx-pw}px;transform-origin:${dir>0?'left':'right'} center;animation:${dir>0?'flyF1':'flyB1'} ${half}s ease-in forwards;`;
+  fp1.style.cssText=`width:${pw}px;height:${ph}px;position:absolute;top:0;left:${dir>0?sx:sx-pw}px;transform-origin:${dir>0?'right':'left'} center;animation:${dir>0?'flyF1':'flyB1'} ${half}s ease-in forwards;`;
   fp1.appendChild(fc1);
   fw.appendChild(fp1);
 
@@ -236,7 +236,7 @@ function flip(dir){
     const sx2=dir>0?(isSingle?0:bw/2):(isSingle?bw:bw/2);
     const fp2=document.createElement('div');
     fp2.className='fp';
-    fp2.style.cssText=`width:${pw}px;height:${ph}px;position:absolute;top:0;left:${dir>0?sx2:sx2-pw}px;transform-origin:${dir>0?'right':'left'} center;animation:${dir>0?'flyF2':'flyB2'} ${half}s ease-out forwards;`;
+    fp2.style.cssText=`width:${pw}px;height:${ph}px;position:absolute;top:0;left:${dir>0?sx2:sx2-pw}px;transform-origin:${dir>0?'left':'right'} center;animation:${dir>0?'flyF2':'flyB2'} ${half}s ease-out forwards;`;
     fp2.appendChild(fc2);
     fw.appendChild(fp2);
 

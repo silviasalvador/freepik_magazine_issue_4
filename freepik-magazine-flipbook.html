@@ -202,12 +202,12 @@ function flip(dir){
   const isSingle=sidxs(cur).length===1||sidxs(nxt).length===1;
   const pw=isSingle?bw:Math.round(bw/2),ph=bh;
   const sx=dir>0?(isSingle?bw:bw/2):(isSingle?0:bw/2);
-  const half=0.35; // segundos por mitad
+  const half=0.35;
 
   const fw=document.getElementById('fw');
   fw.innerHTML='';
 
-  // — MITAD 1: página sale del spread actual —
+  // MITAD 1: página sale — fondo NO cambia todavía
   const fc1=document.createElement('canvas');
   fc1.width=src.width;fc1.height=src.height;
   fc1.getContext('2d').drawImage(src,0,0);
@@ -218,21 +218,18 @@ function flip(dir){
   fp1.appendChild(fc1);
   fw.appendChild(fp1);
 
-  // — MITAD 2: página llega al lado opuesto — se lanza cuando termina la 1
   fp1.addEventListener('animationend',()=>{
     fp1.remove();
-    // Redibujar el nuevo spread justo antes de la segunda mitad
-    cur=nxt;draw(cur);
 
-    // Página destino: en dobles es la página interior del nuevo spread
+    // Ahora sí: cambiar el spread cuando la página está de canto
+    cur=nxt; draw(cur);
+
     const fi2=dir>0?sidxs(nxt)[0]:sidxs(nxt)[sidxs(nxt).length-1];
     const src2=PC[fi2+1]||src;
     const fc2=document.createElement('canvas');
     fc2.width=src2.width;fc2.height=src2.height;
     fc2.getContext('2d').drawImage(src2,0,0);
     fc2.style.cssText=`display:block;width:${pw}px;height:${ph}px;`;
-
-    // En la segunda mitad el pivote es el borde opuesto
     const sx2=dir>0?(isSingle?0:bw/2):(isSingle?bw:bw/2);
     const fp2=document.createElement('div');
     fp2.className='fp';

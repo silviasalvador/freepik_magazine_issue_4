@@ -29,7 +29,7 @@ body{background:#4d4d4d;font-family:'Segoe UI',sans-serif;display:flex;flex-dire
 #spread canvas{display:block;}
 .spine{width:4px;flex-shrink:0;background:linear-gradient(to right,rgba(0,0,0,.04),rgba(160,150,140,.4),rgba(0,0,0,.04));align-self:stretch;}
 
-#fw{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;overflow:visible;z-index:10;}
+#fw{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;overflow:visible;z-index:10;perspective:1400px;perspective-origin:center center;}
 .fp{position:absolute;border-radius:2px;}
 .fp.fwd{transform-origin:left center;animation:flyF .65s ease-in-out forwards;}
 .fp.bck{transform-origin:right center;animation:flyB .65s ease-in-out forwards;}
@@ -205,7 +205,7 @@ function flip(dir){
 
   const fp=document.createElement('div');
   fp.className='fp '+(dir>0?'fwd':'bck');
-  fp.style.cssText=`width:${pw}px;height:${ph}px;top:0;left:${dir>0?sx:sx-pw}px;backface-visibility:hidden;`;
+  fp.style.cssText=`width:${pw}px;height:${ph}px;top:0;left:${dir>0?sx:sx-pw}px;`;
   fp.appendChild(fc);
 
   const fw=document.getElementById('fw');
